@@ -1,5 +1,38 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#050507"><link rel="manifest" href="manifest.json"><title>BoardFlow V2</title><link rel="stylesheet" href="styles.css"></head><body>
-<div class="aurora a1"></div><div class="aurora a2"></div><header><div><div class="logo">BOARD<span>FLOW</span></div><div class="tiny">CLASS 10 • STUDY OS</div></div><button id="install" class="iconbtn" hidden>Install</button></header>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050507">
+<link rel="manifest" href="manifest.json">
+<title>BoardFlow</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="aurora a1"></div>
+<div class="aurora a2"></div>
+
+<header>
+  <div>
+    <div class="logo">BOARD<span>FLOW</span></div>
+    <div class="tiny">CLASS 10 • STUDY OS</div>
+  </div>
+  <div id="clock" class="tiny"></div>
+</header>
+
 <main id="app"></main>
-<nav id="nav"><button data-tab="home" class="active"><b>⌂</b><span>Home</span></button><button data-tab="plan"><b>✓</b><span>Plan</span></button><button data-tab="exams"><b>◷</b><span>Exams</span></button><button data-tab="subjects"><b>▦</b><span>Subjects</span></button><button data-tab="progress"><b>↗</b><span>Progress</span></button><button data-tab="settings"><b>⚙</b><span>Settings</span></button></nav>
-<div id="modal" hidden><div class="modalcard"><div class="modalhead"><h2 id="mtitle">Add exam</h2><button id="close" class="iconbtn">×</button></div><form id="examform"><label>Exam name<input id="ename" required placeholder="Unit Test 3 / Pre-board"></label><label>Date<input id="edate" type="date" required></label><label>Portion<textarea id="eportion" required placeholder="Maths: Quadratic Equations, AP&#10;Science: Electricity"></textarea></label><button class="primary">Save exam</button></form></div></div><div id="toast"></div><script src="app.js?v=3"></script></body></html>
+
+<nav id="nav">
+<button data-tab="home">⌂<span>Home</span></button>
+<button data-tab="plan">✓<span>Plan</span></button>
+<button data-tab="exams">◷<span>Exams</span></button>
+<button data-tab="subjects">▦<span>Subjects</span></button>
+<button data-tab="progress">↗<span>Progress</span></button>
+<button data-tab="settings">⚙<span>Settings</span></button>
+</nav>
+
+<div id="toast"></div>
+
+<script src="app.js?v=4"></script>
+</body>
+</html>
