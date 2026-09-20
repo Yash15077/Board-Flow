@@ -106,3 +106,245 @@ all("#nav button").forEach(b=>b.onclick=()=>{s.tab=b.dataset.tab;save();render()
 if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=4").catch(()=>{});
 setInterval(()=>render(),60000);
 render();
+
+/* ===== BOARDFLOW V5 TEST ENGINE ===== */
+
+const TEST_BANK={
+Maths:{
+"Real Numbers":[
+["MCQ","If HCF(96,404)=4, what is their LCM?","9696",["9696","969","96","404"]],
+["Short","State Euclid's division lemma.","For positive integers a and b, a=bq+r, where 0≤r<b.",[],]
+],
+"Polynomials":[
+["MCQ","If α and β are zeroes of x²-5x+6, then α+β is:","5",["5","6","-5","-6"]],
+["Short","Find the zeroes of x²-5x+6.","2 and 3",[]]
+],
+"Quadratic Equations":[
+["MCQ","The discriminant of ax²+bx+c is:","b²-4ac",["b²+4ac","b²-4ac","4ac-b²","2b-4ac"]],
+["Short","Write the quadratic formula.","x=(-b±√(b²-4ac))/(2a)",[]]
+],
+"Arithmetic Progressions":[
+["MCQ","The common difference of 3, 7, 11, 15 is:","4",["2","3","4","5"]]
+],
+"Triangles":[
+["MCQ","Two triangles are similar if their corresponding angles are:","Equal",["Supplementary","Equal","Complementary","Different"]]
+],
+"Coordinate Geometry":[
+["MCQ","Distance between (0,0) and (3,4) is:","5",["3","4","5","7"]]
+],
+"Introduction to Trigonometry":[
+["MCQ","sin²θ + cos²θ equals:","1",["0","1","2","sinθ"]]
+],
+"Statistics":[
+["MCQ","The value occurring most frequently in a data set is called:","Mode",["Mean","Median","Mode","Range"]]
+],
+"Probability":[
+["MCQ","Probability of a sure event is:","1",["0","1","1/2","-1"]]
+]
+},
+Science:{
+"Chemical Reactions and Equations":[
+["MCQ","A reaction in which heat is released is called:","Exothermic",["Endothermic","Exothermic","Neutral","Displacement"]],
+["Short","What is a balanced chemical equation?","An equation having equal numbers of atoms of each element on both sides.",[]]
+],
+"Acids, Bases and Salts":[
+["MCQ","The pH of a neutral solution at room temperature is approximately:","7",["0","5","7","14"]]
+],
+"Metals and Non-metals":[
+["MCQ","Which metal is liquid at room temperature?","Mercury",["Iron","Copper","Mercury","Aluminium"]]
+],
+"Carbon and its Compounds":[
+["MCQ","The functional group of alcohols is:","-OH",["-COOH","-OH","-CHO","-CO-"]]
+],
+"Life Processes":[
+["MCQ","The process by which green plants prepare food is:","Photosynthesis",["Respiration","Photosynthesis","Transpiration","Excretion"]]
+],
+"Control and Coordination":[
+["MCQ","The basic unit of the nervous system is:","Neuron",["Nephron","Neuron","Alveolus","Platelet"]]
+],
+"How do Organisms Reproduce?":[
+["MCQ","Binary fission is commonly seen in:","Amoeba",["Amoeba","Human","Rose","Mango"]]
+],
+"Heredity":[
+["MCQ","The basic unit of heredity is:","Gene",["Cell","Gene","Tissue","Organ"]]
+],
+"Light – Reflection and Refraction":[
+["MCQ","The SI unit of power of a lens is:","Dioptre",["Metre","Watt","Dioptre","Joule"]]
+],
+"The Human Eye and the Colourful World":[
+["MCQ","Myopia is corrected using a:","Concave lens",["Convex lens","Concave lens","Plane mirror","Prism"]]
+],
+"Electricity":[
+["MCQ","The SI unit of resistance is:","Ohm",["Volt","Ampere","Ohm","Watt"]],
+["MCQ","Electrical power can be written as:","VI",["V/I","VI","I/V","IR"]]
+],
+"Magnetic Effects of Electric Current":[
+["MCQ","The direction of magnetic field around a straight current-carrying conductor is given by:","Right-hand thumb rule",["Left-hand rule","Right-hand thumb rule","Fleming's left-hand rule","Ohm's law"]]
+],
+"Our Environment":[
+["MCQ","The first trophic level generally consists of:","Producers",["Consumers","Decomposers","Producers","Carnivores"]]
+]
+},
+SST:{
+"Resources and Development":[
+["MCQ","Which resource is obtained from living organisms?","Biotic resource",["Abiotic resource","Biotic resource","Non-renewable resource","Human-made resource"]]
+],
+"Power Sharing":[
+["MCQ","Power sharing is desirable because it helps reduce:","Conflict",["Democracy","Conflict","Participation","Representation"]]
+],
+"Federalism":[
+["MCQ","India has how many levels of government in the federal system?","Three",["One","Two","Three","Four"]]
+],
+"Development":[
+["MCQ","Per capita income is calculated by dividing total income by:","Total population",["Area","Total population","Exports","Workers"]]
+],
+"Money and Credit":[
+["MCQ","The modern form of money mainly includes:","Currency and deposits",["Only gold","Currency and deposits","Only coins","Land"]]
+],
+"Nationalism in India":[
+["MCQ","The Non-Cooperation Movement was launched in:","1920",["1919","1920","1930","1942"]]
+],
+"Print Culture and the Modern World":[
+["MCQ","The printing press in Europe is associated with:","Johannes Gutenberg",["James Watt","Johannes Gutenberg","Newton","Galileo"]]
+]
+},
+English:{
+"A Letter to God":[
+["MCQ","Lencho was a:","Farmer",["Teacher","Farmer","Postmaster","Doctor"]]
+],
+"Nelson Mandela":[
+["MCQ","Nelson Mandela became South Africa's first black president in:","1994",["1989","1990","1994","2000"]]
+],
+"From the Diary of Anne Frank":[
+["MCQ","Anne named her diary:","Kitty",["Margot","Kitty","Helen","Anna"]]
+],
+"The Proposal":[
+["MCQ","The Proposal is a:","Play",["Poem","Play","Novel","Essay"]]
+]
+},
+Hindi:{
+"क्षितिज / कृतिका — पाठ 1":[
+["Short","इस पाठ के मुख्य विचार को अपने शब्दों में लिखिए।","उत्तर पाठ के मुख्य विचार और लेखक के संदेश के आधार पर लिखें।",[]]
+],
+"क्षितिज / कृतिका — पाठ 2":[
+["Short","पाठ के आधार पर लेखक के दृष्टिकोण को स्पष्ट कीजिए।","उत्तर पाठ में दिए विचारों और उदाहरणों के आधार पर लिखें।",[]]
+]
+}
+};
+
+function ensureTests(){if(!Array.isArray(s.tests))s.tests=[];save()}
+
+function testSubjects(){
+ return Object.keys(TEST_BANK).map(x=>`<option>${x}</option>`).join("");
+}
+
+function testChapters(sub){
+ return Object.keys(TEST_BANK[sub]||{}).map(x=>`<option>${esc(x)}</option>`).join("");
+}
+
+function testsPage(){
+ ensureTests();
+ let attempts=s.tests||[];
+ let avg=attempts.length?Math.round(attempts.reduce((a,b)=>a+b.percent,0)/attempts.length):0;
+ return `<section class="hero">
+ <div><div class="eyebrow">TEST CENTER</div><h1>Tests & PYQs</h1>
+ <div class="muted">Original CBSE-pattern practice + PYQ tracking</div></div>
+ </section>
+ <div class="grid3">
+ <div class="stat"><span>TESTS</span><b>${attempts.length}</b></div>
+ <div class="stat"><span>AVERAGE</span><b>${avg}%</b></div>
+ <div class="stat"><span>PYQ ATTEMPTS</span><b>${attempts.filter(x=>x.type==="PYQ").length}</b></div>
+ </div>
+ <section class="card">
+ <div class="cardhead"><h2>Start practice</h2></div>
+ <button class="primary" onclick="startTest()">📝 Chapter Test</button>
+ <button class="secondary" onclick="pyqTest()">📚 PYQ Practice</button>
+ </section>
+ <section class="card">
+ <div class="cardhead"><h2>Test history</h2></div>
+ ${attempts.length?attempts.slice().reverse().map(x=>`<div class="planitem">
+ <div><b>${esc(x.subject)} • ${esc(x.chapter)}</b>
+ <small>${esc(x.type)} • ${x.score}/${x.total} • ${x.percent}% • ${x.date}</small></div>
+ </div>`).join(""):`<div class="empty">No tests attempted yet.</div>`}
+ </section>`;
+}
+
+function startTest(type="TEST"){
+ ensureTests();
+ modal(`<div class="modalhead"><h2>${type==="PYQ"?"PYQ Practice":"Chapter Test"}</h2>
+ <button class="iconbtn" onclick="this.closest('#modal').remove()">×</button></div>
+ <label>Subject<select id="tsub" onchange="changeTestChapter()">${testSubjects()}</select></label>
+ <label>Chapter<select id="tchap"></select></label>
+ <button class="primary" onclick="runTest('${type}')">Start</button>`);
+ changeTestChapter();
+}
+
+function changeTestChapter(){
+ let sub=$("#tsub").value;
+ $("#tchap").innerHTML=testChapters(sub);
+}
+
+function pyqTest(){startTest("PYQ")}
+
+function runTest(type){
+ let sub=$("#tsub").value,ch=$("#tchap").value;
+ let bank=(TEST_BANK[sub]&&TEST_BANK[sub][ch])||[];
+ if(!bank.length){toast("No questions yet for this chapter");return}
+ let qs=bank.slice(0,10);
+ let html=`<div class="modalhead"><h2>${type==="PYQ"?"PYQ":"Chapter"} • ${esc(ch)}</h2></div>`;
+ qs.forEach((q,i)=>{
+  html+=`<div class="question"><b>Q${i+1}. ${esc(q[1])}</b>`;
+  if(q[3]&&q[3].length)html+=q[3].map(o=>`<label><input type="radio" name="q${i}" value="${esc(o)}"> ${esc(o)}</label>`).join("");
+  else html+=`<input class="ans" data-i="${i}" placeholder="Write your answer">`;
+  html+=`</div>`;
+ });
+ html+=`<button class="primary" onclick="submitTest('${type}',${JSON.stringify(sub)},${JSON.stringify(ch)},${qs.length})">Submit test</button>`;
+ modal(html);
+ window.currentQuestions=qs;
+}
+
+function submitTest(type,sub,ch,total){
+ let score=0;
+ (window.currentQuestions||[]).forEach((q,i)=>{
+  let val;
+  if(q[3]&&q[3].length){
+   let r=document.querySelector(`input[name="q${i}"]:checked`);
+   val=r?r.value:"";
+  }else{
+   let a=document.querySelector(`.ans[data-i="${i}"]`);
+   val=a?a.value.trim():"";
+  }
+  if(val.toLowerCase()===String(q[2]).toLowerCase())score++;
+ });
+ let percent=Math.round(score/total*100);
+ s.tests.push({id:"test"+Date.now(),type,subject:sub,chapter:ch,score,total,percent,date:today()});
+ save();
+ $("#modal").remove();
+ render();
+ toast(`Score: ${score}/${total} • ${percent}%`);
+}
+
+function renderWithTests(){
+ if(s.tab==="tests")$("#app").innerHTML=testsPage();
+ render();
+}
+
+const oldRender=render;
+render=function(){
+ oldRender();
+ if(s.tab==="tests")$("#app").innerHTML=testsPage();
+ all("#nav button").forEach(b=>b.onclick=()=>{
+  s.tab=b.dataset.tab;
+  save();
+  render();
+ });
+};
+
+if(!all("#nav button").some(x=>x.dataset.tab==="tests")){
+ let n=document.createElement("button");
+ n.dataset.tab="tests";
+ n.innerHTML="📝<span>Tests</span>";
+ n.onclick=()=>{s.tab="tests";save();render()};
+ $("#nav").appendChild(n);
+}
+
