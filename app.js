@@ -348,3 +348,281 @@ if(!all("#nav button").some(x=>x.dataset.tab==="tests")){
  $("#nav").appendChild(n);
 }
 
+
+/* ===== V5.1 TEST FIX ===== */
+
+function startTest(type="TEST"){
+  const subjects=Object.keys(DATA);
+  modal(`
+    <div class="testmodal">
+      <div class="modalhead">
+        <div>
+          <div class="eyebrow">TEST SETUP</div>
+          <h2>${type==="PYQ"?"PYQ Practice":"CBSE Competency Test"}</h2>
+        </div>
+        <button class="iconbtn" onclick="this.closest('#modal').remove()">×</button>
+      </div>
+
+      <label>Subject
+        <select id="tsub">
+          ${subjects.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("")}
+        </select>
+      </label>
+
+      <label>Chapter
+        <select id="tchap"></select>
+      </label>
+
+      <label>Test length
+        <select id="tlength">
+          <option value="5">5 questions • Quick</option>
+          <option value="10" selected>10 questions • Standard</option>
+          <option value="15">15 questions • Full practice</option>
+        </select>
+      </label>
+
+      <div class="testnote">
+        <b>CBSE competency mode</b>
+        <small>
+          Questions are designed around application, case-based,
+          assertion/reasoning and concept-use patterns. They are
+          not claimed to be predictions of the 2027 board paper.
+        </small>
+      </div>
+
+      <button class="primary" onclick="launchSelectedTest('${type}')">
+        🚀 Start Test
+      </button>
+    </div>
+  `);
+
+  const sub=$("#tsub");
+  sub.onchange=changeTestChapter;
+  changeTestChapter();
+}
+
+function changeTestChapter(){
+  const sub=$("#tsub");
+  const chap=$("#tchap");
+  if(!sub||!chap)return;
+
+  const list=Object.keys(TEST_BANK[sub.value]||{});
+
+  chap.innerHTML=list.length
+    ? list.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("")
+    : `<option value="">No questions added yet</option>`;
+}
+
+function launchSelectedTest(type){
+  const sub=$("#tsub")?.value;
+  const ch=$("#tchap")?.value;
+  const len=Number($("#tlength")?.value||10);
+
+  if(!sub||!ch){
+    toast("Select a subject and chapter first");
+    return;
+  }
+
+  runTestV51(type,sub,ch,len);
+}
+
+function runTestV51(type,sub,ch,len){
+  let bank=(TEST_BANK[sub]&&TEST_BANK[sub][ch])||[];
+
+  if(!bank.length){
+    toast("Questions coming for this chapter");
+    return;
+  }
+
+  bank=bank.slice(0,len);
+
+  let html=`
+    <div class="testscreen">
+      <div class="testtop">
+        <div>
+          <div class="eyebrow">${type==="PYQ"?"PYQ PRACTICE":"CBSE COMPETENCY"}</div>
+          <h2>${esc(ch)}</h2>
+          <small>${esc(sub)} • ${bank.length} questions</small>
+        </div>
+        <button class="iconbtn" onclick="this.closest('#modal').remove()">×</button>
+      </div>
+
+      <div class="question-scroll">
+  `;
+
+  bank.forEach((q,i)=>{
+    html+=`
+      <div class="question">
+        <div class="qnumber">QUESTION ${i+1}</div>
+        <b>${esc(q[1])}</b>
+    `;
+
+    if(q[3]&&q[3].length){
+      html+=`
+        <div class="options">
+          ${q[3].map((o,j)=>`
+            <label class="option">
+              <input type="radio" name="q${i}" value="${esc(o)}">
+              <span>${String.fromCharCode(65+j)}</span>
+              ${esc(o)}
+            </label>
+          `).join("")}
+        </div>`;
+    }else{
+      html+=`
+        <textarea class="ans" data-i="${i}"
+          placeholder="Write your answer here..."></textarea>`;
+    }
+
+    html+=`</div>`;
+  });
+
+  html+=`
+      </div>
+
+      <div class="testbottom">
+        <button class="primary"
+          onclick="submitTestV51('${type}',${JSON.stringify(sub)},${JSON.stringify(ch)})">
+          Submit Test
+        </button>
+      </div>
+    </div>
+  `;
+
+  modal(html);
+  window.currentQuestions=bank;
+}
+
+function submitTestV51(type,sub,ch){
+  const qs=window.currentQuestions||[];
+  let score=0;
+
+  qs.forEach((q,i)=>{
+    let val="";
+
+    if(q[3]&&q[3].length){
+      const r=document.querySelector(`input[name="q${i}"]:checked`);
+      if(r)val=r.value;
+    }else{
+      const a=document.querySelector(`.ans[data-i="${i}"]`);
+      if(a)val=a.value.trim();
+    }
+
+    if(val.toLowerCase()===String(q[2]).toLowerCase()){
+      score++;
+    }
+  });
+
+  const total=qs.length;
+  const percent=total?Math.round(score/total*100):0;
+
+  if(!Array.isArray(s.tests))s.tests=[];
+
+  s.tests.push({
+    id:"test"+Date.now(),
+    type,
+    subject:sub,
+    chapter:ch,
+    score,
+    total,
+    percent,
+    date:today()
+  });
+
+  save();
+
+  $("#modal").innerHTML=`
+    <div class="resultscreen">
+      <div class="eyebrow">TEST COMPLETE</div>
+      <h1>${percent}%</h1>
+      <p>${score}/${total} correct</p>
+
+      <div class="resultbar">
+        <div style="width:${percent}%"></div>
+      </div>
+
+      <div class="resultinfo">
+        <b>${esc(sub)}</b>
+        <span>${esc(ch)}</span>
+      </div>
+
+      <button class="primary" onclick="this.closest('#modal').remove();render()">
+        Done
+      </button>
+    </div>
+  `;
+}
+
+/* Fix tests tab so it always opens setup screen */
+function testsPage(){
+  ensureTests();
+
+  const attempts=s.tests||[];
+  const avg=attempts.length
+    ? Math.round(attempts.reduce((a,b)=>a+b.percent,0)/attempts.length)
+    : 0;
+
+  return `
+    <section class="hero">
+      <div>
+        <div class="eyebrow">TEST CENTER</div>
+        <h1>Tests & PYQs</h1>
+        <div class="muted">
+          CBSE competency-style preparation
+        </div>
+      </div>
+    </section>
+
+    <div class="grid3">
+      <div class="stat">
+        <span>TESTS</span>
+        <b>${attempts.length}</b>
+      </div>
+      <div class="stat">
+        <span>AVERAGE</span>
+        <b>${avg}%</b>
+      </div>
+      <div class="stat">
+        <span>PYQs</span>
+        <b>${attempts.filter(x=>x.type==="PYQ").length}</b>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="cardhead">
+        <h2>Practice</h2>
+      </div>
+
+      <button class="primary" onclick="startTest('TEST')">
+        🧠 CBSE Competency Test
+      </button>
+
+      <button class="secondary" onclick="startTest('PYQ')">
+        📚 Previous-Year Question Practice
+      </button>
+    </section>
+
+    <section class="card">
+      <div class="cardhead">
+        <h2>Test History</h2>
+      </div>
+
+      ${
+        attempts.length
+        ? attempts.slice().reverse().map(x=>`
+          <div class="planitem">
+            <div>
+              <b>${esc(x.subject)} • ${esc(x.chapter)}</b>
+              <small>
+                ${esc(x.type)} • ${x.score}/${x.total}
+                • ${x.percent}% • ${x.date}
+              </small>
+            </div>
+          </div>
+        `).join("")
+        : `<div class="empty">No tests attempted yet.</div>`
+      }
+    </section>
+  `;
+}
+
