@@ -1,21 +1,173 @@
-const KEY="boardflow-v2";const board=new Date(Date.UTC(2027,1,15));
-const base={tab:"home",available:150,exams:[],routine:[["06:00–06:20","Ready"],["06:30–14:20","School"],["14:20–14:50","Lunch + shower"],["15:00–17:00","Coaching"],["17:30–18:00","Rest"],["18:00–23:00","Study + dinner + school work"],["23:00","Sleep"]],subjects:[
-["Maths",12,0,"NCERT • Oswaal • PYQs • tests"],["Science",13,0,"NCERT • concepts • Oswaal • PYQs"],["SST",22,0,"NCERT • Oswaal • maps • PYQs"],["English",12,0,"Literature • writing • grammar"],["Hindi",10,0,"Literature • writing • grammar"]],tasks:[
-[1,"Maths — current chapter practice","Maths",45,3,false],[2,"Science — NCERT + active recall","Science",40,3,false],[3,"SST — one chapter + questions","SST",40,2,false],[4,"English/Hindi — literature or writing","English/Hindi",30,1,false],[5,"Board PYQs — timed practice","Boards",35,2,false]]};
-let s=load();function load(){try{return {...base,...JSON.parse(localStorage.getItem(KEY)||"{}")}}catch{return structuredClone(base)}}function save(){localStorage.setItem(KEY,JSON.stringify(s))}
-const $=q=>document.querySelector(q);const esc=x=>String(x).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));function daysLeft(){let n=new Date();return Math.max(0,Math.ceil((board-new Date(n.getFullYear(),n.getMonth(),n.getDate()))/86400000))}function toast(t){let x=$("#toast");x.textContent=t;x.classList.add("show");setTimeout(()=>x.classList.remove("show"),1500)}
-function plan(){let a=Math.max(0,+s.available||0),now=new Date(),items=[];s.exams.filter(e=>new Date(e.date+"T00:00:00")>=new Date(now.getFullYear(),now.getMonth(),now.getDate())).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3).forEach(e=>{let d=Math.ceil((new Date(e.date+"T00:00:00")-now)/86400000);e.portion.split(/,|\n/).map(x=>x.trim()).filter(Boolean).slice(0,3).forEach(p=>items.push({t:e.name+" — "+p,m:35,r:"exam in "+d+" day"+(d==1?"":"s"),score:100-Math.min(70,d*2)}))});s.tasks.filter(t=>!t[5]).forEach(t=>items.push({t:t[1],m:t[3],r:"backlog • priority "+t[4],score:t[4]*18}));items.push({t:"Board PYQs — timed practice",m:35,r:"keep board prep active",score:34});items.sort((a,b)=>b.score-a.score);let used=0,out=[];for(let x of items)if(used+x.m<=a){out.push(x);used+=x.m}return out}
-function render(){let tab=s.tab,n=new Date(),h=n.getHours(),g=h<12?"Good morning.":h<17?"Keep moving.":"Lock in.";let done=s.tasks.filter(t=>t[5]).length,p=Math.round(done/s.tasks.length*100);let pages={home:`<section class="hero"><div><div class="eyebrow">${n.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"})}</div><h1>${g}</h1><div class="muted">Your day changes. Your plan changes with it.</div></div><div class="count"><strong>${daysLeft()}</strong><span>DAYS TO BOARDS</span></div></section><div class="grid3"><div class="stat"><span>AVAILABLE</span><b>${Math.floor(s.available/60)}h ${s.available%60}m</b><small>today</small></div><div class="stat"><span>PROGRESS</span><b>${p}%</b><small>tasks complete</small></div><div class="stat"><span>BACKLOG</span><b>${s.tasks.length-done}</b><small>open tasks</small></div></div><section class="card focus"><div class="cardhead"><div><div class="eyebrow">SMART MODE</div><h2>What should I study now?</h2></div><button class="primary" id="build">Build plan</button></div><div id="homeplan">${planHTML()}</div></section><section class="card"><div class="cardhead"><div><div class="eyebrow">TODAY</div><h2>How much time do you have?</h2></div><button class="secondary" id="timebtn">Change</button></div><div class="muted">${s.available} minutes • planner will fit tasks into this window.</div></section><section class="card"><div class="cardhead"><div><div class="eyebrow">UP NEXT</div><h2>School exams</h2></div><button class="secondary" id="add">+ Add</button></div>${examsHTML(2)}</section>`,
-plan:`<section class="hero"><div><div class="eyebrow">ADAPTIVE PLANNER</div><h1>Today's plan</h1><div class="muted">Highest priority first. No guilt spiral.</div></div></section><section class="card"><div class="cardhead"><div><div class="eyebrow">AVAILABLE</div><h2>${s.available} minutes</h2></div><button class="secondary" id="timebtn">Change</button></div>${planHTML()}</section><section class="card"><div class="cardhead"><div><div class="eyebrow">RECOVERY</div><h2>Open tasks</h2></div></div>${tasksHTML()}</section>`,
-exams:`<section class="hero"><div><div class="eyebrow">EXAM CENTER</div><h1>Exams</h1><div class="muted">Add the date and exact portion. BoardFlow handles urgency.</div></div><button class="primary" id="add">+ Add exam</button></section><section class="card">${examsHTML()}</section>`,
-subjects:`<section class="hero"><div><div class="eyebrow">BOARD ROADMAP</div><h1>Subjects</h1><div class="muted">Track syllabus progress and keep every subject alive.</div></div></section><section class="card">${subjectsHTML()}</section>`,
-progress:`<section class="hero"><div><div class="eyebrow">PROGRESS</div><h1>${p}% complete</h1><div class="muted">Progress is based on completed planner tasks.</div></div></section><section class="card"><div class="cardhead"><div><div class="eyebrow">TASKS</div><h2>${done} / ${s.tasks.length}</h2></div></div><div class="progressbar"><div class="fill" style="width:${p}%"></div></div></section><section class="card"><div class="cardhead"><div><div class="eyebrow">SUBJECT SNAPSHOT</div><h2>Roadmap</h2></div></div>${subjectsHTML()}</section>`,
-settings:`<section class="hero"><div><div class="eyebrow">CONTROL CENTER</div><h1>Settings</h1><div class="muted">Make BoardFlow fit your real life.</div></div></section><section class="card">${settingsHTML()}</section>`};$("#app").innerHTML=pages[tab];document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));bind()}
-function planHTML(){let x=plan();if(!x.length)return '<div class="empty">No task fits this time window. Try adding 30 more minutes.</div>';let used=x.reduce((a,b)=>a+b.m,0);return x.map((p,i)=>`<div class="planitem"><span class="num">${i+1} • ${p.m}m</span><div><b>${esc(p.t)}</b><small>${esc(p.r)}</small></div></div>`).join("")+`<div class="meta">Planned ${used} / ${s.available} minutes. Remaining time is your buffer.</div>`}
-function examsHTML(limit){let a=[...s.exams].sort((x,y)=>x.date.localeCompare(y.date));if(limit)a=a.slice(0,limit);if(!a.length)return '<div class="empty">No school exams added yet.</div>';return a.map((e,i)=>{let d=Math.ceil((new Date(e.date+"T00:00:00")-new Date())/86400000);return `<div class="exam"><div class="examtop"><div class="examname">${esc(e.name)}</div><button class="iconbtn del" data-i="${i}">Delete</button></div><div class="meta">${new Date(e.date+"T00:00:00").toLocaleDateString()} • ${d>=0?d+" days left":"passed"}</div><div class="portion">${esc(e.portion)}</div></div>`}).join("")}
-function subjectsHTML(){return s.subjects.map((x,i)=>{let pct=Math.round(x[2]/x[1]*100);return `<div class="subject"><div class="subjecttop"><span>${esc(x[0])}</span><span>${pct}%</span></div><div class="progressbar"><div class="fill" style="width:${pct}%"></div></div><div class="meta">${esc(x[3])}</div><div class="row" style="margin-top:8px"><button class="chip" data-sub="${i}" data-dir="-1">−</button><button class="chip" data-sub="${i}" data-dir="1">+ chapter done</button></div></div>`}).join("")}
-function tasksHTML(){return s.tasks.map(t=>`<label class="task ${t[5]?"done":""}"><input type="checkbox" data-task="${t[0]}" ${t[5]?"checked":""}><span><b>${esc(t[1])}</b><span class="meta">${esc(t[2])} • ${t[3]} min • priority ${t[4]}</span></span></label>`).join("")}
-function settingsHTML(){return `<div class="setting"><b>Board target</b><span>15 February 2027 • countdown is automatic.</span></div><div class="setting"><b>Available time today</b><span>Currently ${s.available} minutes.</span><div class="row" style="margin-top:8px"><button class="secondary" id="timebtn">Change time</button></div></div><div class="setting"><b>Routine</b><span>Edit your school, coaching, rest and study blocks.</span><div class="row" style="margin-top:8px"><button class="secondary" id="routinebtn">Edit routine</button></div></div><div class="setting"><b>Data</b><span>Your plan is stored locally on this device.</span><div class="row" style="margin-top:8px"><button class="secondary" id="reset">Reset app</button></div></div>`}
-function bind(){let b=$("#build");if(b)b.onclick=()=>render();let add=$("#add");if(add)add.onclick=()=>{$("#modal").hidden=false;$("#ename").focus()};let tb=$("#timebtn");if(tb)tb.onclick=()=>{let v=prompt("How many minutes can you study today?",s.available);v=Math.max(0,Math.min(720,parseInt(v)||0));s.available=v;save();render();toast("Today's time updated")};document.querySelectorAll(".del").forEach(x=>x.onclick=()=>{let i=+x.dataset.i;s.exams.splice(i,1);save();render();toast("Exam deleted")});document.querySelectorAll("[data-task]").forEach(x=>x.onchange=()=>{let t=s.tasks.find(t=>t[0]==x.dataset.task);if(t)t[5]=x.checked;save();render()});document.querySelectorAll("[data-sub]").forEach(x=>x.onclick=()=>{let q=s.subjects[+x.dataset.sub];q[2]=Math.max(0,Math.min(q[1],q[2]+(+x.dataset.dir)));save();render()});let rb=$("#routinebtn");if(rb)rb.onclick=()=>{let v=prompt("One line per slot: time|activity",s.routine.map(x=>x.join("|")).join("\n"));if(v){s.routine=v.split("\n").map(x=>x.split("|").map(y=>y.trim())).filter(x=>x.length>1);save();toast("Routine saved")}};let reset=$("#reset");if(reset)reset.onclick=()=>{if(confirm("Reset all BoardFlow data?")){localStorage.removeItem(KEY);s=load();render();toast("Reset complete")}}}
-document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{s.tab=b.dataset.tab;save();render()});$("#close").onclick=()=>$("#modal").hidden=true;$("#examform").onsubmit=e=>{e.preventDefault();s.exams.push({name:$("#ename").value.trim(),date:$("#edate").value,portion:$("#eportion").value.trim()});save();$("#modal").hidden=true;e.target.reset();render();toast("Exam added")};
-let deferred=null;addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;$("#install").hidden=false});$("#install").onclick=async()=>{if(deferred){deferred.prompt();await deferred.userChoice;deferred=null;$("#install").hidden=true}};if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});render();
+const KEY="boardflow-v3";
+const SUBJECTS=["Maths","Science","SST","English","Hindi"];
+const BOARD="2027-02-15";
+const TYPES=[
+["Lecture / concept",35],["Notes",30],["NCERT practice",35],
+["Question practice",40],["Oswaal / competency",40],
+["PYQs",40],["Revision + active recall",25],["Chapter test",45]
+];
+const NORMAL=[
+["06:00","06:20","Ready"],["06:30","14:20","School"],
+["14:20","14:50","Lunch + shower"],["15:00","17:00","Coaching"],
+["17:30","18:00","Rest"],["18:00","23:00","Study + dinner + school work"],
+["23:00","23:59","Sleep"]
+];
+const ABSENT=[
+["06:00","06:20","Ready"],["06:30","08:00","Study"],
+["08:00","08:30","Breakfast"],["08:30","11:00","Deep study"],
+["11:00","11:30","Break"],["11:30","13:00","NCERT + questions"],
+["13:00","14:00","Lunch + rest"],["14:00","17:00","Deep study"],
+["17:00","17:30","Break"],["17:30","20:00","Study"],
+["20:00","21:00","Dinner"],["21:00","22:30","PYQ / test"],
+["22:30","23:00","Plan tomorrow"],["23:00","23:59","Sleep"]
+];
+const BASE={tab:"home",day:"normal",routines:{normal:NORMAL,absent:ABSENT,custom:NORMAL},
+exams:[],chapters:[],tasks:[],available:150};
+
+let s=load();
+function load(){try{
+ const x=JSON.parse(localStorage.getItem(KEY)||"{}");
+ const old=JSON.parse(localStorage.getItem("boardflow-v2")||"{}");
+ let z={...BASE,...x};
+ if(!x.exams&&old.exams)z.exams=old.exams.map((e,i)=>({id:"old"+i,name:e.name,date:e.date,start:e.date,end:e.date,portions:[{subject:"General",text:e.portion||""}]}));
+ return z;
+}catch{return JSON.parse(JSON.stringify(BASE))}}
+function save(){localStorage.setItem(KEY,JSON.stringify(s))}
+const $=q=>document.querySelector(q);
+const esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const all=q=>[...document.querySelectorAll(q)];
+function today(){return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())}
+function ist(){return new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:true}).format(new Date())}
+function mins(x){let[a,b]=x.split(":").map(Number);return a*60+b}
+function days(a,b){return Math.ceil((new Date(b+"T00:00:00+05:30")-new Date(a+"T00:00:00+05:30"))/86400000)}
+function toast(x){let t=$("#toast");t.textContent=x;t.className="show";setTimeout(()=>t.className="",1600)}
+function routine(){return s.routines[s.day]||NORMAL}
+function remaining(){
+ let now=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));
+ let cur=now.getHours()*60+now.getMinutes(),total=0;
+ routine().forEach(x=>{
+  let a=mins(x[0]),b=mins(x[1]);
+  if(b>cur&&/study|revision|question|pyq|test|deep|ncert|coaching|school work/i.test(x[2]))
+   total+=Math.max(0,b-Math.max(a,cur));
+ });
+ return total||s.available;
+}
+function examTasks(){
+ let out=[],t=today();
+ s.exams.filter(e=>(e.end||e.date)>=t).forEach(e=>{
+  let u=100-Math.max(0,days(t,e.date))*4;
+  (e.portions||[]).forEach(p=>{
+   if(p.text)out.push({text:`${p.subject}: ${p.text}`,m:35,score:u+20,why:`${e.name} • exam ${e.date}`})
+  })
+ });
+ return out;
+}
+function plan(){
+ let av=remaining(),items=[...examTasks()];
+ s.tasks.filter(x=>!x.done).forEach(x=>items.push({
+  text:`${x.subject}: ${x.chapter} — ${x.type}`,m:x.minutes,score:x.priority*15,why:"chapter workflow"
+ }));
+ items.push({text:"Board PYQs — timed practice",m:35,score:30,why:"board practice"});
+ items.sort((a,b)=>b.score-a.score);
+ let used=0,out=[];
+ items.forEach(x=>{if(used+x.m<=av){out.push(x);used+=x.m}});
+ return [out,used,av];
+}
+function planHTML(){
+ let [p,u,a]=plan();
+ return p.length?p.map((x,i)=>`<div class="planitem"><span class="num">${i+1} • ${x.m}m</span><div><b>${esc(x.text)}</b><small>${esc(x.why)}</small></div></div>`).join("")+
+ `<div class="meta">Planned ${u}/${a} minutes • IST ${ist()}</div>`:
+ `<div class="empty">No task fits the remaining time. Add time or change today's routine.</div>`;
+}
+function examsHTML(){
+ if(!s.exams.length)return `<div class="empty">No exams added.</div>`;
+ return [...s.exams].sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`
+ <div class="exam"><div class="examtop"><div><b>${esc(e.name)}</b>
+ <div class="meta">Exam ${e.date} • Prep ${e.start} → ${e.end}</div></div>
+ <button class="iconbtn deleteExam" data-id="${e.id}">×</button></div>
+ ${(e.portions||[]).map(p=>`<div class="portion">${esc(p.subject)}: ${esc(p.text)}</div>`).join("")}</div>`).join("");
+}
+function chaptersHTML(){
+ if(!s.chapters.length)return `<div class="empty">No chapters yet. Add one to create the full workflow.</div>`;
+ return s.chapters.map(c=>{
+  let ts=s.tasks.filter(t=>t.chapterId===c.id),d=ts.filter(t=>t.done).length;
+  return `<div class="chapter"><b>${esc(c.subject)} — ${esc(c.name)}</b><div class="meta">${d}/${ts.length} completed</div>
+  ${ts.map(t=>`<label class="task ${t.done?"done":""}"><input type="checkbox" data-task="${t.id}" ${t.done?"checked":""}>${esc(t.type)} <span class="meta">• ${t.minutes}m</span></label>`).join("")}</div>`
+ }).join("");
+}
+function routineHTML(){return routine().map(x=>`<div class="routine"><b>${x[0]}–${x[1]}</b><span>${esc(x[2])}</span></div>`).join("")}
+function render(){
+ let p=plan(),done=s.tasks.filter(x=>x.done).length,pct=s.tasks.length?Math.round(done/s.tasks.length*100):0;
+ let date=new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",weekday:"long",day:"numeric",month:"short"}).format(new Date());
+ let pages={
+ home:`<section class="hero"><div><div class="eyebrow">${date}</div><h1>BoardFlow</h1><div class="muted">IST ${ist()} • ${s.day==="absent"?"Absent-school day":"Normal day"}</div></div><div class="count"><strong>${Math.max(0,days(today(),BOARD))}</strong><span>DAYS TO BOARDS</span></div></section>
+ <div class="grid3"><div class="stat"><span>TIME LEFT</span><b>${p[2]}m</b></div><div class="stat"><span>PROGRESS</span><b>${pct}%</b></div><div class="stat"><span>OPEN</span><b>${s.tasks.filter(x=>!x.done).length}</b></div></div>
+ <section class="card"><div class="cardhead"><div><div class="eyebrow">SMART PLAN</div><h2>What should I study now?</h2></div><button class="primary" onclick="render()">Refresh</button></div>${planHTML()}</section>
+ <section class="card"><div class="cardhead"><h2>Today's routine</h2><button class="secondary" onclick="routineModal()">Change</button></div>${routineHTML()}</section>
+ <section class="card"><div class="cardhead"><h2>Upcoming exams</h2><button class="secondary" onclick="examModal()">+ Add</button></div>${examsHTML()}</section>`,
+ plan:`<section class="hero"><div><div class="eyebrow">ADAPTIVE PLANNER</div><h1>Today's Plan</h1><div class="muted">BoardFlow uses IST and your routine.</div></div></section><section class="card">${planHTML()}</section><section class="card"><div class="cardhead"><h2>Chapter tasks</h2><button class="secondary" onclick="chapterModal()">+ Chapter</button></div>${chaptersHTML()}</section>`,
+ exams:`<section class="hero"><div><div class="eyebrow">EXAM CENTER</div><h1>Exams</h1><div class="muted">Subject-wise portions + preparation window.</div></div><button class="primary" onclick="examModal()">+ Add exam</button></section><section class="card">${examsHTML()}</section>`,
+ subjects:`<section class="hero"><div><div class="eyebrow">SUBJECT WORKFLOW</div><h1>Subjects</h1><div class="muted">Lecture → Notes → NCERT → Questions → Oswaal → PYQ → Revision → Test.</div></div><button class="primary" onclick="chapterModal()">+ Add chapter</button></section><section class="card">${chaptersHTML()}</section>`,
+ progress:`<section class="hero"><div><div class="eyebrow">PROGRESS</div><h1>${pct}%</h1><div class="muted">${done}/${s.tasks.length} workflow tasks done.</div></div></section><section class="card"><div class="progressbar"><div class="fill" style="width:${pct}%"></div></div></section>`,
+ settings:`<section class="hero"><div><div class="eyebrow">CONTROL CENTER</div><h1>Settings</h1><div class="muted">Routine and local data.</div></div></section><section class="card"><div class="setting"><b>Today's mode</b><p>${s.day==="normal"?"Normal school day":s.day==="absent"?"Absent from school":"Custom routine"}</p><button class="secondary" onclick="routineModal()">Change routine</button></div><div class="setting"><b>IST</b><p>BoardFlow clock: ${ist()}</p></div><div class="setting"><b>Data</b><p>Saved on this device.</p><button class="secondary" onclick="resetApp()">Reset app</button></div></section>`
+ };
+ $("#app").innerHTML=pages[s.tab]||pages.home;
+ all("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===s.tab));
+ all("[data-task]").forEach(x=>x.onchange=()=>{let t=s.tasks.find(t=>String(t.id)===String(x.dataset.task));if(t)t.done=x.checked;save();render()});
+ all(".deleteExam").forEach(x=>x.onclick=()=>{s.exams=s.exams.filter(e=>String(e.id)!==String(x.dataset.id));save();render();toast("Exam deleted")});
+}
+function modalHTML(){
+ if($("#modal"))$("#modal").remove();
+ let m=document.createElement("div");m.id="modal";m.innerHTML=`<div class="modalcard"><div class="modalhead"><h2>Add exam</h2><button class="iconbtn" onclick="this.closest('#modal').remove()">×</button></div>
+ <label>Exam name<input id="en" placeholder="Half-yearly / Pre-board"></label>
+ <label>Exam date<input id="ed" type="date"></label>
+ <div class="twocol"><label>Prep start<input id="ps" type="date" value="${today()}"></label><label>Prep end<input id="pe" type="date"></label></div>
+ <div id="pros"></div><button class="secondary" onclick="addPortion()">+ Subject portion</button><button class="primary" onclick="saveExam()">Save exam</button></div>`;
+ document.body.appendChild(m);addPortion();$("#ed").onchange=()=>$("#pe").value=$("#ed").value;
+}
+function addPortion(){
+ let d=document.createElement("div");d.className="portionrow";d.innerHTML=`<select>${SUBJECTS.map(x=>`<option>${x}</option>`).join("")}</select><input placeholder="Chapters / topics"><button class="iconbtn" onclick="this.parentElement.remove()">×</button>`;$("#pros").appendChild(d);
+}
+function examModal(){modalHTML()}
+function saveExam(){
+ let date=$("#ed").value,start=$("#ps").value,end=$("#pe").value;
+ if(!date||start>end||end>date){toast("Use Start ≤ End ≤ Exam date");return}
+ let portions=all(".portionrow").map(r=>({subject:r.querySelector("select").value,text:r.querySelector("input").value.trim()})).filter(x=>x.text);
+ s.exams.push({id:"e"+Date.now(),name:$("#en").value.trim(),date,start,end,portions});
+ save();$("#modal").remove();render();toast("Exam added");
+}
+function chapterModal(){
+ let m=document.createElement("div");m.id="modal";m.innerHTML=`<div class="modalcard"><div class="modalhead"><h2>Add chapter</h2><button class="iconbtn" onclick="this.closest('#modal').remove()">×</button></div>
+ <label>Subject<select id="cs">${SUBJECTS.map(x=>`<option>${x}</option>`).join("")}</select></label>
+ <label>Chapter<input id="cn" placeholder="Electricity"></label>
+ <div class="checkgrid">${TYPES.map((x,i)=>`<label><input class="ct" type="checkbox" value="${i}" ${i<6?"checked":""}> ${x[0]}</label>`).join("")}</div>
+ <button class="primary" onclick="saveChapter()">Create workflow</button></div>`;
+ document.body.appendChild(m);
+}
+function saveChapter(){
+ let subject=$("#cs").value,name=$("#cn").value.trim(),id="c"+Date.now();
+ if(!name){toast("Enter chapter");return}
+ s.chapters.push({id,subject,name});
+ all(".ct:checked").forEach((x,i)=>{let z=TYPES[+x.value];s.tasks.push({id:"t"+Date.now()+i,chapterId:id,subject,chapter:name,type:z[0],minutes:z[1],done:false,priority:+x.value>=5?3:2})});
+ save();$("#modal").remove();render();toast("Chapter workflow created");
+}
+function routineModal(){
+ let m=document.createElement("div");m.id="modal";m.innerHTML=`<div class="modalcard"><div class="modalhead"><h2>Today's routine</h2><button class="iconbtn" onclick="this.closest('#modal').remove()">×</button></div>
+ <div class="seg"><button class="segbtn ${s.day==="normal"?"active":""}" onclick="setDay('normal')">Normal</button><button class="segbtn ${s.day==="absent"?"active":""}" onclick="setDay('absent')">Absent</button><button class="segbtn ${s.day==="custom"?"active":""}" onclick="setDay('custom')">Custom</button></div>
+ <div id="rrows"></div><button class="secondary" onclick="addSlot()">+ Time block</button><button class="primary" onclick="saveRoutine()">Save routine</button></div>`;
+ document.body.appendChild(m);drawRoutine();
+}
+function drawRoutine(){
+ $("#rrows").innerHTML=routine().map((x,i)=>`<div class="routineedit"><input value="${x[0]}"><input value="${x[1]}"><input value="${esc(x[2])}"><button class="iconbtn" onclick="this.parentElement.remove()">×</button></div>`).join("");
+}
+function setDay(x){s.day=x;if(x==="normal")s.routines.normal=NORMAL;if(x==="absent")s.routines.absent=ABSENT;drawRoutine()}
+function addSlot(){s.routines[s.day].push(["18:00","19:00","Study"]);drawRoutine()}
+function saveRoutine(){
+ let rows=all(".routineedit").map(r=>[r.children[0].value,r.children[1].value,r.children[2].value]).filter(x=>x.every(Boolean));
+ s.routines[s.day]=rows;save();$("#modal").remove();render();toast("Routine saved");
+}
+function resetApp(){if(confirm("Reset BoardFlow?")){localStorage.removeItem(KEY);s=JSON.parse(JSON.stringify(BASE));save();render()}}
+all("#nav button").forEach(b=>b.onclick=()=>{s.tab=b.dataset.tab;save();render()});
+if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+setInterval(()=>{let x=$("#clock");if(x)x.textContent=ist();render()},60000);
+render();
