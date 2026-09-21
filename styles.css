@@ -414,3 +414,160 @@
   }
 }
 
+
+/* =========================================================
+   BOARDFLOW FINAL MOBILE / EXAM SELECTOR FIX
+   ========================================================= */
+
+html,
+body{
+  min-height:100%;
+  height:auto!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch;
+}
+
+body{
+  overscroll-behavior-y:auto;
+}
+
+#app{
+  min-height:calc(100vh - 90px);
+  height:auto!important;
+  overflow:visible!important;
+  padding-bottom:110px!important;
+}
+
+.modal,
+.modal-overlay,
+#modal{
+  position:fixed!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-height:100dvh!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior:contain;
+  z-index:9999!important;
+}
+
+.modal-card,
+.modalbox,
+.modal-content,
+.exam-modal{
+  width:min(94%,680px)!important;
+  max-height:calc(100dvh - 32px)!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  margin:16px auto!important;
+  padding-bottom:90px!important;
+}
+
+.exam-selector{
+  max-height:52dvh!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  border-radius:16px;
+  padding:8px;
+}
+
+.exam-subject{
+  margin-bottom:16px;
+}
+
+.exam-subject-head{
+  position:sticky;
+  top:0;
+  z-index:5;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  padding:10px;
+  margin-bottom:6px;
+  backdrop-filter:blur(14px);
+}
+
+.chapter-check{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:10px 8px;
+  border-radius:12px;
+  cursor:pointer;
+}
+
+.chapter-check input{
+  width:20px;
+  height:20px;
+  flex:0 0 20px;
+  margin-top:2px;
+}
+
+.exam-bottom-bar{
+  position:sticky!important;
+  bottom:0!important;
+  z-index:20!important;
+  padding:12px!important;
+  margin:14px -8px -14px!important;
+  backdrop-filter:blur(18px);
+  border-top:1px solid rgba(255,255,255,.1);
+}
+
+.selected-count{
+  font-weight:700;
+  margin-bottom:8px;
+}
+
+.select-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.select-actions button{
+  flex:1;
+  min-width:110px;
+}
+
+@media(max-width:600px){
+
+  .modal-card,
+  .modalbox,
+  .modal-content,
+  .exam-modal{
+    width:96%!important;
+    margin:8px auto!important;
+    max-height:calc(100dvh - 16px)!important;
+  }
+
+  .exam-selector{
+    max-height:55dvh!important;
+  }
+
+  input,
+  select,
+  textarea,
+  button{
+    font-size:16px!important;
+  }
+
+  .exam-bottom-bar{
+    bottom:0!important;
+  }
+}
+
+/* Never trap touch scrolling inside the whole application */
+*{
+  -webkit-tap-highlight-color:transparent;
+}
+
+button{
+  touch-action:manipulation;
+}
+

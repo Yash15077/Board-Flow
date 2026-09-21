@@ -1531,3 +1531,727 @@ render();
 
 })();
 
+
+/* =========================================================
+   BOARDFLOW EXAM SELECTOR V8
+   Mobile-safe chapter selection + smart exam planning
+   ========================================================= */
+
+(function(){
+
+  window.BFExamV8 = true;
+
+  const oldExamModal = window.examModal;
+
+  /* ---------- CHAPTER SELECTOR ---------- */
+
+  window.examModal = function(editId=null){
+
+    const old = editId
+      ? (s.exams||[]).find(x=>x.id===editId)
+      : null;
+
+    const selected = {};
+
+    if(old && old.portions){
+      old.portions.forEach(p=>{
+        selected[p.subject] = selected[p.subject] || [];
+        selected[p.subject].push(p.chapter);
+      });
+    }
+
+    Object.keys(DATA).forEach(sub=>{
+      selected[sub]=selected[sub]||[];
+    });
+
+    function renderSubjects(){
+
+      return Object.keys(DATA).map(subject=>{
+
+        const chapters=Object.keys(DATA[subject]);
+        const count=selected[subject].length;
+
+        return `
+        <div class="exam-subject">
+
+          <div class="exam-subject-head card">
+
+            <strong>${esc(subject)}</strong>
+
+            <div>
+              <span class="muted">${count} selected</span>
+              <button type="button"
+                onclick="BFExamV8SelectAll('${escAttr(subject)}')">
+                All
+              </button>
+              <button type="button"
+                onclick="BFExamV8Clear('${escAttr(subject)}')">
+                Clear
+              </button>
+            </div>
+
+          </div>
+
+          <div>
+
+            ${chapters.map(ch=>{
+
+              const checked=selected[subject].includes(ch);
+
+              return `
+              <label class="chapter-check">
+
+                <input
+                  type="checkbox"
+                  ${checked?"checked":""}
+                  onchange="BFExamV8Toggle('${escAttr(subject)}','${escAttr(ch)}',this.checked)"
+                >
+
+                <span>${esc(ch)}</span>
+
+              </label>
+              `;
+
+            }).join("")}
+
+          </div>
+
+        </div>
+        `;
+
+      }).join("");
+
+    }
+
+    window.__BFExamSelected=selected;
+
+    openModal(`
+      <div class="modal-card exam-modal">
+
+        <div class="cardhead">
+
+          <div>
+            <div class="eyebrow">
+              ${old?"EDIT EXAM":"NEW EXAM"}
+            </div>
+
+            <h2>${old?"Edit exam":"Add exam"}</h2>
+          </div>
+
+          <button onclick="closeModal()">✕</button>
+
+        </div>
+
+        <label>Exam name</label>
+
+        <input
+          id="bfExamName"
+          value="${old?escAttr(old.name):""}"
+          placeholder="e.g. Science Half Yearly"
+        >
+
+        <label>Exam date</label>
+
+        <input
+          id="bfExamDate"
+          type="date"
+          value="${old?old.date:""}"
+        >
+
+        <div class="grid2">
+
+          <div>
+            <label>Prep starts</label>
+            <input
+              id="bfPrepStart"
+              type="date"
+              value="${old?.prepStart||today()}"
+            >
+          </div>
+
+          <div>
+            <label>Prep ends</label>
+            <input
+              id="bfPrepEnd"
+              type="date"
+              value="${old?.prepEnd||""}"
+            >
+          </div>
+
+        </div>
+
+        <div class="card">
+
+          <div class="cardhead">
+
+            <div>
+              <div class="eyebrow">PORTION</div>
+              <h3>Select chapters</h3>
+            </div>
+
+            <span id="bfTotalSelected">0 selected</span>
+
+          </div>
+
+          <p class="muted">
+            Tick only the chapters actually included in this exam.
+            BoardFlow will build the study plan from these selections.
+          </p>
+
+          <div class="exam-selector">
+            ${renderSubjects()}
+          </div>
+
+        </div>
+
+        <div class="exam-bottom-bar">
+
+          <div class="selected-count"
+            id="bfSelectedBottom">
+            0 chapters selected
+          </div>
+
+          <div class="select-actions">
+
+            <button class="secondary"
+              onclick="BFExamV8SelectAllSubjects()">
+              Select all
+            </button>
+
+            <button class="secondary"
+              onclick="BFExamV8ClearAllSubjects()">
+              Clear all
+            </button>
+
+            <button class="primary"
+              onclick="BFExamV8Save('${editId||""}')">
+              ${old?"Save changes":"Create exam"}
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+    `);
+
+    BFExamV8UpdateCount();
+  };
+
+  /* ---------- ESCAPE ---------- */
+
+  window.escAttr=function(v){
+    return String(v||"")
+      .replace(/&/g,"&amp;")
+      .replace(/'/g,"&#39;")
+      .replace(/"/g,"&quot;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;");
+  };
+
+  /* ---------- SELECT ---------- */
+
+  window.BFExamV8Toggle=function(subject,chapter,checked){
+
+    const data=window.__BFExamSelected;
+
+    if(!data)return;
+
+    data[subject]=data[subject]||[];
+
+    if(checked){
+
+      if(!data[subject].includes(chapter)){
+        data[subject].push(chapter);
+      }
+
+    }else{
+
+      data[subject]=data[subject]
+        .filter(x=>x!==chapter);
+
+    }
+
+    BFExamV8UpdateCount();
+  };
+
+  window.BFExamV8SelectAll=function(subject){
+
+    const data=window.__BFExamSelected;
+
+    data[subject]=Object.keys(DATA[subject]);
+
+    renderExamSelectorInPlace();
+
+  };
+
+  window.BFExamV8Clear=function(subject){
+
+    window.__BFExamSelected[subject]=[];
+
+    renderExamSelectorInPlace();
+
+  };
+
+  window.BFExamV8SelectAllSubjects=function(){
+
+    Object.keys(DATA).forEach(sub=>{
+      window.__BFExamSelected[sub]=Object.keys(DATA[sub]);
+    });
+
+    renderExamSelectorInPlace();
+
+  };
+
+  window.BFExamV8ClearAllSubjects=function(){
+
+    Object.keys(DATA).forEach(sub=>{
+      window.__BFExamSelected[sub]=[];
+    });
+
+    renderExamSelectorInPlace();
+
+  };
+
+  function renderExamSelectorInPlace(){
+
+    const data=window.__BFExamSelected;
+
+    Object.keys(DATA).forEach(subject=>{
+
+      const checks=document.querySelectorAll(
+        `[onchange^="BFExamV8Toggle('${CSS.escape(subject)}'"]`
+      );
+
+      checks.forEach(input=>{
+
+        const label=input.closest(".chapter-check");
+
+        const chapter=label
+          ?label.querySelector("span")?.textContent
+          :"";
+
+        input.checked=
+          data[subject]?.includes(chapter)||false;
+
+      });
+
+      const head=document.querySelector(
+        `.exam-subject-head`
+      );
+
+    });
+
+    BFExamV8UpdateCount();
+
+  }
+
+  function BFExamV8UpdateCount(){
+
+    const data=window.__BFExamSelected||{};
+
+    const total=Object.values(data)
+      .reduce((a,b)=>a+b.length,0);
+
+    const a=$("#bfTotalSelected");
+    const b=$("#bfSelectedBottom");
+
+    if(a)a.textContent=`${total} selected`;
+    if(b)b.textContent=`${total} chapter${total===1?"":"s"} selected`;
+
+  }
+
+  /* ---------- SAVE EXAM ---------- */
+
+  window.BFExamV8Save=function(editId){
+
+    const name=$("#bfExamName")?.value.trim();
+    const date=$("#bfExamDate")?.value;
+    const prepStart=$("#bfPrepStart")?.value||today();
+    const prepEnd=$("#bfPrepEnd")?.value||date;
+
+    if(!name||!date){
+      toast("Enter exam name and exam date.");
+      return;
+    }
+
+    const portions=[];
+
+    Object.entries(window.__BFExamSelected||{})
+      .forEach(([subject,chapters])=>{
+        chapters.forEach(chapter=>{
+          portions.push({
+            subject,
+            chapter
+          });
+        });
+      });
+
+    if(!portions.length){
+      toast("Select at least one chapter.");
+      return;
+    }
+
+    if(editId){
+
+      const ex=s.exams.find(x=>x.id===editId);
+
+      if(ex){
+        ex.name=name;
+        ex.date=date;
+        ex.prepStart=prepStart;
+        ex.prepEnd=prepEnd;
+        ex.portions=portions;
+      }
+
+    }else{
+
+      s.exams.push({
+        id:"exam_"+Date.now(),
+        name,
+        date,
+        prepStart,
+        prepEnd,
+        portions,
+        createdAt:Date.now()
+      });
+
+    }
+
+    /* Create/update realistic study tasks */
+
+    BFExamV8BuildTasks({
+      name,
+      date,
+      prepStart,
+      prepEnd,
+      portions
+    });
+
+    save();
+    closeModal();
+    render();
+
+    toast("Exam saved. Smart plan updated.");
+
+  };
+
+  /* ---------- SMART EXAM TASK BUILDER ---------- */
+
+  function BFExamV8BuildTasks(exam){
+
+    const days=Math.max(
+      1,
+      Math.ceil(
+        (new Date(exam.date+"T00:00:00")-
+         new Date(today()+"T00:00:00"))
+        /86400000
+      )
+    );
+
+    const urgent=days<=2;
+
+    exam.portions.forEach((p,index)=>{
+
+      const existing=s.tasks.find(t=>
+        t.exam===exam.name &&
+        t.subject===p.subject &&
+        t.chapter===p.chapter
+      );
+
+      if(existing){
+
+        existing.priority=urgent?10:8;
+        existing.due=exam.date;
+        existing.exam=exam.name;
+
+        return;
+      }
+
+      const steps=[
+        "Lecture / Concept",
+        "Notes",
+        "NCERT",
+        "Question Practice",
+        "Competency Practice",
+        "PYQ / Revision",
+        "Chapter Test"
+      ];
+
+      steps.forEach((step,si)=>{
+
+        const minutes=
+          step==="Chapter Test"?30:
+          step==="NCERT"?25:
+          step==="Question Practice"?30:
+          step==="Competency Practice"?30:
+          step==="PYQ / Revision"?25:
+          20;
+
+        const priority=
+          urgent?10:
+          days<=5?9:
+          8;
+
+        s.tasks.push({
+
+          id:"exam_"+Date.now()+"_"+index+"_"+si,
+
+          subject:p.subject,
+          chapter:p.chapter,
+          step,
+
+          minutes,
+
+          priority,
+
+          exam:exam.name,
+
+          due:exam.date,
+
+          createdAt:Date.now(),
+
+          done:false
+
+        });
+
+      });
+
+    });
+
+    /* ---------- EXAM-ONLY MODE ---------- */
+
+    if(urgent){
+
+      s.examOnly=true;
+      s.examOnlyUntil=exam.date;
+
+    }else{
+
+      const future=(s.exams||[])
+        .filter(x=>x.date>=today())
+        .sort((a,b)=>a.date.localeCompare(b.date));
+
+      s.examOnly=
+        future.length&&
+        Math.ceil(
+          (new Date(future[0].date)-
+           new Date(today()))
+          /86400000
+        )<=2;
+
+    }
+
+  }
+
+  /* ---------- SMART PLANNER OVERRIDE ---------- */
+
+  const oldAvailable=window.available;
+
+  window.available=function(){
+
+    if(s.examOnly){
+
+      const exam=s.exams
+        .filter(x=>x.date>=today())
+        .sort((a,b)=>a.date.localeCompare(b.date))[0];
+
+      if(exam){
+
+        const days=Math.ceil(
+          (new Date(exam.date)-
+           new Date(today()))
+          /86400000
+        );
+
+        if(days<=1){
+
+          const normal=
+            typeof oldAvailable==="function"
+            ?oldAvailable()
+            :60;
+
+          return Math.max(20,normal);
+
+        }
+
+      }
+
+    }
+
+    return typeof oldAvailable==="function"
+      ?oldAvailable()
+      :60;
+
+  };
+
+  /* ---------- EXAM-AWARE PLAN ---------- */
+
+  window.planHTML=function(){
+
+    const availableM=available();
+
+    if(availableM<=0){
+
+      return `
+      <div class="empty">
+        ${s.examOnly
+          ?"Exam focus is active. Your available study time is finished for now."
+          :"You're marked busy/done for now."}
+      </div>
+      `;
+
+    }
+
+    let tasks=(s.tasks||[])
+      .filter(x=>!x.done);
+
+    const upcoming=(s.exams||[])
+      .filter(x=>x.date>=today())
+      .sort((a,b)=>a.date.localeCompare(b.date));
+
+    const nearest=upcoming[0];
+
+    if(nearest){
+
+      const days=Math.ceil(
+        (new Date(nearest.date)-
+         new Date(today()))
+        /86400000
+      );
+
+      if(days<=2){
+
+        tasks=tasks.filter(x=>
+          x.exam===nearest.name
+        );
+
+      }else if(days<=5){
+
+        const examTasks=tasks.filter(x=>
+          x.exam===nearest.name
+        );
+
+        if(examTasks.length){
+          tasks=[
+            ...examTasks,
+            ...tasks.filter(x=>x.exam!==nearest.name)
+          ];
+        }
+
+      }
+
+    }
+
+    tasks.sort((a,b)=>{
+
+      const pa=a.priority||1;
+      const pb=b.priority||1;
+
+      const da=a.due||"9999";
+      const db=b.due||"9999";
+
+      if(pa!==pb)return pb-pa;
+
+      return da.localeCompare(db);
+
+    });
+
+    let remaining=availableM;
+    const chosen=[];
+
+    for(const t of tasks){
+
+      if(remaining<=0)break;
+
+      const mins=Math.min(
+        t.minutes||20,
+        remaining
+      );
+
+      chosen.push({
+        ...t,
+        plannedMinutes:mins
+      });
+
+      remaining-=mins;
+
+      if(chosen.length>=4)break;
+
+    }
+
+    if(!chosen.length){
+
+      return `
+      <div class="empty">
+        No suitable task fits the available time.
+        Use Tests or revision.
+      </div>
+      `;
+
+    }
+
+    return chosen.map(t=>`
+
+      <div class="planitem">
+
+        <div>
+
+          <div class="eyebrow">
+            ${esc(t.subject)} • ${esc(t.step)}
+          </div>
+
+          <strong>${esc(t.chapter)}</strong>
+
+          <div class="muted">
+            ${t.plannedMinutes} min
+            ${t.exam
+              ?` • ${esc(t.exam)}`
+              :""}
+          </div>
+
+        </div>
+
+        <button
+          class="primary"
+          onclick="toggleTask('${escAttr(t.id)}')">
+          ✓
+        </button>
+
+      </div>
+
+    `).join("");
+
+  };
+
+  /* ---------- RESET EXAM ONLY MODE ---------- */
+
+  window.checkExamOnly=function(){
+
+    if(!s.examOnly)return;
+
+    const exam=s.exams
+      .filter(x=>x.date>=today())
+      .sort((a,b)=>a.date.localeCompare(b.date))[0];
+
+    if(!exam){
+      s.examOnly=false;
+      save();
+      return;
+    }
+
+    const days=Math.ceil(
+      (new Date(exam.date)-
+       new Date(today()))
+      /86400000
+    );
+
+    s.examOnly=days<=2;
+
+    save();
+
+  };
+
+  checkExamOnly();
+
+})();
